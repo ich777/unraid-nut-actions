@@ -62,9 +62,9 @@ if [ -f /etc/nut/xnut-notify-hooks.sh ]; then
   fi
 fi
 
-echo "--------------------------------------------------"
-echo "---Installation from NUT Actions Plugin compete---"
-echo "--------------------------------------------------"
+echo "---------------------------------------------------"
+echo "---Installation from NUT Actions Plugin complete---"
+echo "---------------------------------------------------"
 
 </INLINE>
 </FILE>
