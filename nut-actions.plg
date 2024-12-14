@@ -3,7 +3,7 @@
   <!ENTITY name      "nut-actions">
   <!ENTITY author    "ich777">
   <!ENTITY version   "2024.12.14">
-  <!ENTITY md5       "92cbcbed3e909be3f517771ea5cb5c59">
+  <!ENTITY md5       "f2b0ca3de4edb153a8f6f53e355cf394">
   <!ENTITY launch    "Settings/nut-actions">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
