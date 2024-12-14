@@ -1,0 +1,159 @@
+#!/bin/bash
+if [ -z "${1}" ]; then
+  exit 1
+fi
+
+on_battery() {
+  # Create directory or recreate directory if not exists
+  if [ ! -d /tmp/nut-actions ]; then
+    mkdir -p /tmp/nut-actions
+  else
+    rm -rf /tmp/nut-actions
+    sleep 1
+    mkdir -p /tmp/nut-actions
+  fi
+  # Docker
+  # Get running containers exluding exlude list
+  if [ -f /boot/config/plugins/nut-actions/docker_exclude.list ]; then
+    EXCLUDE_DOCKER=$(paste -sd '|' /boot/config/plugins/nut-actions/docker_exclude.list)
+    RUNNING_DOCKER=$(docker ps --format "{{.Names}}" 2>/dev/null | grep -E -v "${EXCLUDE_DOCKER}")
+  else
+    RUNNING_DOCKER=$(docker ps --format "{{.Names}}" 2>/dev/null)
+  fi
+
+  if [ ! -z "${RUNNING_DOCKER}" ]; then
+    # Write running containers into temp file
+    echo "${RUNNING_DOCKER}" > /tmp/nut-actions/docker_running.list
+
+    # Stop running containers
+    if [ ! -z "${RUNNING_DOCKER}" ]; then
+      docker stop -t 10 ${RUNNING_DOCKER} >/dev/null 2>&1
+    fi
+  else
+    rm -f /tmp/nut-actions/docker_running.list
+  fi
+
+  # LXC
+  # Get running containers excluding exclude list
+  if [ -f /boot/config/plugins/nut-actions/lxc_exclude.list ]; then
+    EXCLUDE_LXC=$(paste -sd '|' /boot/config/plugins/nut-actions/lxc_exclude.list)
+    RUNNING_LXC=$(lxc-ls --running -1 2>/dev/null | grep -E -v "${EXCLUDE_LXC}")
+  else
+    RUNNING_LXC=$(lxc-ls --running -1 2>/dev/null)
+  fi
+
+  if [ ! -z "${RUNNING_LXC}" ]; then
+    # Write running containers into temp file
+    echo "${RUNNING_LXC}" > /tmp/nut-actions/lxc_running.list
+
+    # Stop running containers
+    if [ ! -z "${RUNNING_LXC}" ]; then
+      IFS=$'\n'
+      for container in ${RUNNING_LXC}
+      do
+        lxc-stop -t 10 $container  >/dev/null 2>&1
+      done
+    else
+      rm -f /tmp/nut-actions/lxc_running.list
+    fi
+  fi
+
+  # VM
+  # Get running VMs exluding exlude list
+  if [ -f /boot/config/plugins/nut-actions/vm_exclude.list ]; then
+    EXCLUDE_VM=$(paste -sd '|' /boot/config/plugins/nut-actions/vm_exclude.list)
+    RUNNING_VM=$(virsh list --state-running | awk 'NR > 2 { $1=""; $NF=""; sub(/^ +| +$/, ""); print }' 2>/dev/null | grep -E -v "${EXCLUDE_VM}")
+  else
+    EXCLUD_VM=""
+    RUNNING_VM=$(virsh list --state-running | awk 'NR > 2 { $1=""; $NF=""; sub(/^ +| +$/, ""); print }' 2>/dev/null)
+  fi
+
+  if [ ! -z "${RUNNING_VM}" ]; then
+    # Write running containers into temp file
+    echo "${RUNNING_VM}" > /tmp/nut-actions/vm_running.list
+
+    # Stop running VMs
+    if [ ! -z "${RUNNING_VM}" ]; then
+      IFS=$'\n'
+      for vm in ${RUNNING_VM}
+      do
+        virsh shutdown $(echo $vm | sed 's/ $//') >/dev/null 2>&1
+      done
+      sleep 30
+      if [ ! -z "${EXCLUDE_VM}" ]; then
+        STILL_RUNNING=$(virsh list --state-running | awk 'NR > 2 { $1=""; $NF=""; sub(/^ +| +$/, ""); print }' 2>/dev/null | grep -E -v "${EXCLUDE_VM}")
+      else
+        STILL_RUNNING=$(virsh list --state-running | awk 'NR > 2 { $1=""; $NF=""; sub(/^ +| +$/, ""); print }' 2>/dev/null)
+      fi
+      if [ ! -z "${STILL_RUNNING}" ]; then
+        IFS=$'\n'
+        for vm in ${STILL_RUNNING}
+        do
+          virsh destroy $(echo $vm | sed 's/ $//') >/dev/null 2>&1
+        done
+      fi
+    fi
+  else
+    rm -f /tmp/nut-actions/vm_running.list
+  fi
+}
+
+on_line() {
+  if [ ! -d /tmp/nut-actions ]; then
+    # Exit script when /tmp/nut-actions is not found because
+    # this is probably a normal boot
+    exit 0
+  fi
+  # Docker
+  # Check if there where any previously running containers
+  if [ -f /tmp/nut-actions/docker_running.list ]; then
+    # Get previously running containers
+    DOCKER_CONTAINERS=$(cat /tmp/nut-actions/docker_running.list)
+    # Sort containers after unraid autostart file
+    DOCKER_CONTAINERS=$(awk 'NR==FNR { order[$1] = NR; next } $1 in order { print $1, order[$1] }' /var/lib/docker/unraid-autostart <(echo "${DOCKER_CONTAINERS}" | tr ' ' '\n') | sort -k2,2n | cut -d' ' -f1)
+    # Start containers
+    IFS=$'\n'
+    for container in ${DOCKER_CONTAINERS}
+    do
+      docker start $container >/dev/null 2>&1
+    done
+  fi
+
+  # LXC
+  # Check if there where any previously running containers and start them
+  if [ -f /tmp/nut-actions/lxc_running.list ]; then
+    LXC_CONTAINERS=$(cat /tmp/nut-actions/lxc_running.list)
+    # Start containers
+    IFS=$'\n'
+    for container in ${LXC_CONTAINERS}
+    do
+      lxc-start $container >/dev/null 2>&1
+    done
+  fi
+
+  # VM
+  # Check if there where any previously running VMs and start them
+  if [ -f /tmp/nut-actions/vm_running.list ]; then
+    VMS=$(cat /tmp/nut-actions/vm_running.list)
+    # Start containers
+    IFS=$'\n'
+    for vm in ${VMS}
+    do
+      virsh start $(echo $vm | sed 's/ $//') >/dev/null 2>&1
+    done
+    rm -f /tmp/nut-actions/vm_running.list
+  fi
+  if [ -d /tmp/nut-actions ]; then
+    rm -rf /tmp/nut-actions
+  fi
+}
+
+if [ "${1}" == "on_battery" ]; then
+  on_battery
+elif [ "${1}" == "on_line" ]; then
+  on_line
+else
+  echo "Unrecognized option ${1}"
+  exit 1
+fi
+exit 0

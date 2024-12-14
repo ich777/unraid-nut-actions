@@ -1,0 +1,246 @@
+Menu="Utilities"
+Title="NUT Actions"
+Icon="nut-actions.png"
+---
+
+<script>
+  // don't execute commands again if page is refreshed
+  if ( window.history.replaceState ) {
+    window.history.replaceState( null, null, window.location.href );
+  }
+</script>
+
+<style>
+label+.content {
+    margin-top:43px !important;
+}
+table tbody td {
+    line-height:normal
+}
+</style>
+
+<?php
+// get exclusion lists
+$excluded_docker = [];
+$excluded_lxc = [];
+$excluded_vm = [];
+
+$docker_exclude_file = "/boot/config/plugins/nut-actions/docker_exclude.list";
+$lxc_exclude_file = "/boot/config/plugins/nut-actions/lxc_exclude.list";
+$vm_exclude_file = "/boot/config/plugins/nut-actions/vm_exclude.list";
+
+if (file_exists($docker_exclude_file)) {
+    $docker_list = file($docker_exclude_file, FILE_IGNORE_NEW_LINES);
+    $excluded_docker = $docker_list;
+}
+if (file_exists($lxc_exclude_file)) {
+    $lxc_list = file($lxc_exclude_file, FILE_IGNORE_NEW_LINES);
+    $excluded_lxc = $lxc_list;
+}
+if (file_exists($vm_exclude_file)) {
+    $vm_list = file($vm_exclude_file, FILE_IGNORE_NEW_LINES);
+    $excluded_vm = $vm_list;
+}
+?>
+
+<link type="text/css" rel="stylesheet" href="<?autov('/webGui/styles/jquery.switchbutton.css')?>">
+<script src="<?autov('/webGui/javascript/jquery.switchbutton.js')?>"></script>
+
+<form id="s" method="post">
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;">
+    <div style="min-width: 510px; max-width: 520px; margin: 5px;">
+      <table id="docker_table" class="tablesorter shift" style="margin-top: 0px !important;">
+        <thead>
+          <tr>
+            <th style='width: 280px; min-width: 280px;'><a><i class="fa fa-th-list"></i></a>&nbsp;Docker</th>
+            <th style='width: 150px; min-width: 150px;'>Stop Container</th>
+          </tr>
+        </thead>
+        <tbody align="left">
+<?php
+$exec_output = [];
+$docker_containers = [];
+exec('docker ps -a --format "{{.Names}} {{.State}}"', $exec_output, $return_var);
+
+foreach ($exec_output as $container_list) {
+    list($name, $status) = explode(" ", $container_list, 2);
+    $docker_containers[] = ['name' => $name, 'status' => $status];
+}
+
+if (file_exists("/boot/config/plugins/dockerMan/userprefs.cfg")) {
+  $sortOrderFile = file_get_contents("/boot/config/plugins/dockerMan/userprefs.cfg");
+  preg_match_all('/\d+="([^"]+)"/', $sortOrderFile, $matches);
+  $sortOrder = $matches[1];
+  usort($docker_containers, function($a, $b) use ($sortOrder) {
+    $posA = array_search($a['name'], $sortOrder);
+    $posB = array_search($b['name'], $sortOrder);
+    if ($posA === false) $posA = -1;
+    if ($posB === false) $posB = -1;
+    return $posA - $posB;
+  }); 
+}
+
+foreach ($docker_containers as $docker_container) {
+  if (file_exists('/var/lib/docker/unraid/images/' . $docker_container['name'] . '-icon.png')) {
+    $container_img = '<img src="/state/plugins/dynamix.docker.manager/images/' . $docker_container['name'] . '-icon.png" class="img" width="30" height="30">';
+  } else {
+    $container_img = '<img src="/plugins/dynamix.docker.manager/images/question.png' . $docker_container['name'] . '-icon.png" class="img" width="30" height="30">';
+  }
+  if ($docker_container['status'] == "running") {
+    $container_state = "<i class='fa fa-play started green-text'></i><span class='state'>running</span>";
+  } elseif ($docker_container['status'] == "paused") {
+    $container_state = "<i class='fa fa-pause paused orange-text'></i><span class='state'>paused</span>";
+  } else {
+    $container_state = "<i class='fa fa-square stopped red-text'></i><span class='state'>stopped</span>";
+  }
+  echo "<tr><td><span class='outer'>" . $container_img . "<span class='inner'><span class='appname'>" . $docker_container['name'] . "<br/>" . $container_state . "</span></span></td><td><input class='docker exclude' type='checkbox' name='docker_containers[]' value='" . $docker_container['name'] . "'" . (in_array($docker_container['name'], $excluded_docker) ? "checked" : "") . "></span></td></tr>";
+}
+?>
+        </tbody>
+        </table>
+      </div>
+<?php if(is_file("/boot/config/plugins/lxc.plg")) { ?>
+    <div style="min-width: 450px; max-width: 500px; margin: 5px;">
+      <table id="lxc_table" class="tablesorter shift" style="margin-top: 0px !important;">
+        <thead>
+          <tr>
+            <th style='width: 280px; min-width: 280px;'><a><i class="fa fa-th-list"></i></a>&nbsp;LXC</th>
+            <th style='width: 150px; min-width: 150px;'>Stop Container</th>
+          </tr>
+        </thead>
+        <tbody align="left">
+<?php
+$exec_output = [];
+$lxc_settings = parse_ini_file("/boot/config/plugins/lxc/lxc.conf");
+exec('lxc-ls -1', $exec_output, $return_var);
+
+foreach ($exec_output as $lxc_container) {
+  $lxc_container = trim($lxc_container . PHP_EOL);
+  $cont_distribution = trim(exec("grep -oP '(?<=dist )\w+' " . $lxc_settings['lxc.lxcpath'] . "/" . $lxc_container . "/config | head -1 | sed 's/\"//g'"));
+  if (file_exists($lxc_settings['lxc.lxcpath'] . '/custom-icons/' . $lxc_container . '.png')) {
+    $container_img = "<img src='" . $lxc_settings['lxc.lxcpath'] . "/custom-icons/" . $lxc_container . ".png' class='img' width='30' height='30'>";
+  } elseif (file_exists('/usr/local/emhttp/plugins/lxc/images/distributions/' . $cont_distribution . '.png')) {
+    $container_img = "<img src='/plugins/lxc/images/distributions/" . $cont_distribution . ".png' class='img' width='30' height='30'>";
+  } else {
+    $container_img = "<img src='/plugins/lxc/images/distributions/question.png' class='img' width='30' height='30'>";
+  }
+  $container_status = exec("lxc-info -s " . $lxc_container . " | awk '{print $2}'");
+  if ($container_status === "RUNNING") {
+    $container_state = "<i class='fa fa-play started green-text'></i><span class='state'>running</span>";
+  } elseif ($container_status == "FROZEN") {
+    $container_state = "<i class='fa fa-pause paused orange-text'></i><span class='state'>paused</span>";
+  } else {
+    $container_state = "<i class='fa fa-square stopped red-text'></i><span class='state'>stopped</span>";
+  }
+  echo "<tr><td><span class='outer'>" . $container_img . "<span class='inner'><span class='appname'>" . $lxc_container . "<br/>" . $container_state . "</span></span></td><td><input class='lxc exclude' type='checkbox' name='lxc_containers[]' value='" . $lxc_container . "'" . (in_array($lxc_container, $excluded_lxc) ? "checked" : "") . "></span></td></tr>";
+}
+?>
+        </tbody>
+      </table>
+    </div>
+<?php } ?>
+    <div style="min-width: 450px; max-width: 500px; margin: 5px;">
+      <table id="vm_table" class="tablesorter shift" style="margin-top: 0px !important;">
+        <thead>
+          <tr>
+            <th style='width: 280px; min-width: 280px;'><a><i class="fa fa-th-list"></i></a>&nbsp;VM</th>
+            <th style='width: 150px; min-width: 150px;'>Stop VM</th>
+          </tr>
+        </thead>
+        <tbody align="left">
+<?php
+$vms = [];
+
+foreach (scandir("/etc/libvirt/qemu") as $file) {
+  if (pathinfo($file, PATHINFO_EXTENSION) === 'xml') {
+    $filePath = '/etc/libvirt/qemu' . DIRECTORY_SEPARATOR . $file;
+    $xmlData = simplexml_load_file($filePath);
+    if ($xmlData !== false) {
+      $name = (string)$xmlData->name;
+      $icon = (string)$xmlData->metadata->vmtemplate['icon'];
+      $status = shell_exec('virsh domstate ' . escapeshellarg($name));
+      $status = trim($status);
+      $vms[] = [
+        'name' => $name,
+        'state' => $status,
+        'icon' => $icon
+      ];
+    }
+  }
+}
+
+foreach ($vms as $vm) {
+  if ($vm['state'] === "running") {
+    $vm_state = "<i class='fa fa-play started green-text'></i><span class='state'>running</span>";
+  } elseif ($vm['state'] == "paused") {
+    $vm_state = "<i class='fa fa-pause paused orange-text'></i><span class='state'>paused</span>";
+  } else {
+    $vm_state = "<i class='fa fa-square stopped red-text'></i><span class='state'>stopped</span>";
+  }
+
+  if (file_exists("/usr/local/emhttp/plugins/dynamix.vm.manager/templates/images/" . $vm['icon'])) {
+    $vm_img = "<img src='/plugins/dynamix.vm.manager/templates/images/" . $vm['icon'] . "' class='img' width='30' height='30'>";
+  } else {
+    $vm_img = "<img src='/plugins/dynamix.vm.manager/templates/images/default.png' class='img' width='30' height='30'>";
+  }
+  echo "<tr><td><span class='outer'>" . $vm_img . "<span class='inner'><span class='appname'>" . $vm['name'] . "<br/>" . $vm_state . "</span></span></td><td><input class='lxc exclude' type='checkbox' name='vm_s[]' value='" . $vm['name'] . "'" . (in_array($vm['name'], $excluded_vm) ? "checked" : "") . "></span></td></tr>";
+}
+?>
+        </tbody>
+      </table>
+    </div>
+    <div style="min-width: 180px; max-width: 200px; margin: 5px;">
+      <input type="submit" name="update" value="Update">
+      <input type="submit" name="remove" value="Remove">
+    </div>
+  </form>
+</div>
+
+<script>
+// show switchButton
+$('.exclude').switchButton({labels_placement:'right', on_label:"Don't Stop", off_label:"Stop"});
+</script>
+
+<?php
+if(isset($_POST['update'])) {
+  if (!empty($_POST['docker_containers'])) {
+    $dockerContainers = $_POST['docker_containers'];
+    $docker_exclusion = implode("\n", $dockerContainers);
+    file_put_contents("/boot/config/plugins/nut-actions/docker_exclude.list", $docker_exclusion);
+  } else {
+    if (file_exists("/boot/config/plugins/nut-actions/docker_exclude.list")) {
+      unlink("/boot/config/plugins/nut-actions/docker_exclude.list");
+    }
+  }
+  if (!empty($_POST['lxc_containers'])) {
+    $lxcContainers = $_POST['lxc_containers'];
+    $lxc_exclusion = implode("\n", $lxcContainers);
+    file_put_contents("/boot/config/plugins/nut-actions/lxc_exclude.list", $lxc_exclusion);
+  } else {
+    if (file_exists("/boot/config/plugins/nut-actions/lxc_exclude.list")) {
+      unlink("/boot/config/plugins/nut-actions/lxc_exclude.list");
+    }
+  }
+  if (!empty($_POST['vm_s'])) {
+    $virtual_machines = $_POST['vm_s'];
+    $vm_exclusion .= implode("\n", $virtual_machines);
+    file_put_contents("/boot/config/plugins/nut-actions/vm_exclude.list", $vm_exclusion);
+  } else {
+    if (file_exists("/boot/config/plugins/nut-actions/vm_exclude.list")) {
+      unlink("/boot/config/plugins/nut-actions/vm_exclude.list");
+    }
+  }
+  echo '<script>parent.window.location.reload();</script>';
+} elseif(isset($_POST['remove'])) {
+  if (file_exists("/boot/config/plugins/nut-actions/docker_exclude.list")) {
+    unlink("/boot/config/plugins/nut-actions/docker_exclude.list");
+  }
+  if (file_exists("/boot/config/plugins/nut-actions/lxc_exclude.list")) {
+    unlink("/boot/config/plugins/nut-actions/lxc_exclude.list");
+  }
+  if (file_exists("/boot/config/plugins/nut-actions/vm_exclude.list")) {
+    unlink("/boot/config/plugins/nut-actions/vm_exclude.list");
+  }
+  echo '<script>parent.window.location.reload();</script>';
+}
+?>
