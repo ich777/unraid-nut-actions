@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "nut-actions">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2023.12.14">
+  <!ENTITY version   "2024.12.14">
   <!ENTITY md5       "52dd85b79f47925dda9125dcf1d78aa1">
   <!ENTITY launch    "Settings/nut-actions">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
