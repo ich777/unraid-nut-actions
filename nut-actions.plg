@@ -3,7 +3,7 @@
   <!ENTITY name      "nut-actions">
   <!ENTITY author    "ich777">
   <!ENTITY version   "2024.12.14">
-  <!ENTITY md5       "52dd85b79f47925dda9125dcf1d78aa1">
+  <!ENTITY md5       "92cbcbed3e909be3f517771ea5cb5c59">
   <!ENTITY launch    "Settings/nut-actions">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
@@ -46,7 +46,9 @@ if [ ! -f /boot/config/plugins/nut-dw.plg ]; then
   removepkg &name;-&version;
   rm -rf &emhttp;
   rm -rf &plugin;
-  echo "NUT Plugin not found, this Plugin will only work with the NUT plugin from desertwitch aka Rysz"
+  echo "------------------------------------------------------------------------------------------"
+  echo "---ERROR: NUT Plugin not found! Please install the NUT Plugin from desertwitch aka Rysz---"
+  echo "------------------------------------------------------------------------------------------"
   exit 1
 fi
 
@@ -59,6 +61,10 @@ if [ -f /etc/nut/xnut-notify-hooks.sh ]; then
     chmod +x /etc/nut/xnut-notify-hooks.sh
   fi
 fi
+
+echo "--------------------------------------------------"
+echo "---Installation from NUT Actions Plugin compete---"
+echo "--------------------------------------------------"
 
 </INLINE>
 </FILE>
