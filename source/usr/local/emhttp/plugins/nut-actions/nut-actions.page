@@ -46,8 +46,11 @@ if (file_exists($vm_exclude_file)) {
 <link type="text/css" rel="stylesheet" href="<?autov('/webGui/styles/jquery.switchbutton.css')?>">
 <script src="<?autov('/webGui/javascript/jquery.switchbutton.js')?>"></script>
 
+<p>Please select the Containers/VMs that you want to keep running when your Server is operating on battery power, and click the <b>UPDATE</b> button, by default all Containers/VMs will be stopped.<br/><i>(Clicking <b>RESET</b> will clear your selection)</i><br/>&nbsp;</p>
+
 <form id="s" method="post">
   <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;">
+<?php if(is_file('/var/run/dockerd.pid')) { ?>
     <div style="min-width: 510px; max-width: 520px; margin: 5px;">
       <table id="docker_table" class="tablesorter shift" style="margin-top: 0px !important;">
         <thead>
@@ -77,7 +80,7 @@ if (file_exists("/boot/config/plugins/dockerMan/userprefs.cfg")) {
     if ($posA === false) $posA = -1;
     if ($posB === false) $posB = -1;
     return $posA - $posB;
-  }); 
+  });
 }
 
 foreach ($docker_containers as $docker_container) {
@@ -99,7 +102,8 @@ foreach ($docker_containers as $docker_container) {
         </tbody>
         </table>
       </div>
-<?php if(is_file("/boot/config/plugins/lxc.plg")) { ?>
+<?php }
+if(is_file("/boot/config/plugins/lxc.plg")) { ?>
     <div style="min-width: 450px; max-width: 500px; margin: 5px;">
       <table id="lxc_table" class="tablesorter shift" style="margin-top: 0px !important;">
         <thead>
@@ -138,7 +142,8 @@ foreach ($exec_output as $lxc_container) {
         </tbody>
       </table>
     </div>
-<?php } ?>
+<?php }
+if(exec("grep -o '^SERVICE=.enable' /boot/config/domain.cfg 2>/dev/null")) { ?>
     <div style="min-width: 450px; max-width: 500px; margin: 5px;">
       <table id="vm_table" class="tablesorter shift" style="margin-top: 0px !important;">
         <thead>
@@ -189,9 +194,10 @@ foreach ($vms as $vm) {
         </tbody>
       </table>
     </div>
+    <?php } ?>
     <div style="min-width: 180px; max-width: 200px; margin: 5px;">
       <input type="submit" name="update" value="Update">
-      <input type="submit" name="remove" value="Remove">
+      <input type="submit" name="reset" value="Reset">
     </div>
   </form>
 </div>
@@ -231,7 +237,7 @@ if(isset($_POST['update'])) {
     }
   }
   echo '<script>parent.window.location.reload();</script>';
-} elseif(isset($_POST['remove'])) {
+} elseif(isset($_POST['reset'])) {
   if (file_exists("/boot/config/plugins/nut-actions/docker_exclude.list")) {
     unlink("/boot/config/plugins/nut-actions/docker_exclude.list");
   }
