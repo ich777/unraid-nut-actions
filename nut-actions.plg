@@ -35,7 +35,7 @@ rm -f $(ls &plugin;/&name;*.txz 2>/dev/null|grep -v '&version;')
 <INLINE>
 **NUT Actions**
 
-This plugin is intended to seamlessly integrate with the NUT Plugin, automatically shutting down all your Docker and LXC containers, as well as virtual machines (VMs), when your server is operating on battery power to save energy. You can specify exceptions to this behavior. Once power is restored, the plugin will automatically restart all previously running containers and VMs if exceptions where specified on the plugin page.
+This plugin is intended to seamlessly integrate with the NUT Plugin, automatically shutting down all your Docker and LXC Containers, as well as virtual machines (VMs), when your Server is operating on battery power to save energy to bridge power outages without shutting down your Server. You can specify exceptions to this behavior. Once power is restored, the plugin will automatically restart all previously running containers and VMs.
 </INLINE>
 </FILE>
 
