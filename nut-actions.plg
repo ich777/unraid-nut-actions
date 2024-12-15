@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "nut-actions">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2024.12.14">
-  <!ENTITY md5       "f2b0ca3de4edb153a8f6f53e355cf394">
+  <!ENTITY version   "2024.12.15">
+  <!ENTITY md5       "9b0147fa018bf7c7638984369feb7396">
   <!ENTITY launch    "Settings/nut-actions">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
@@ -15,7 +15,7 @@
 
 <CHANGES>
 
-###2024.12.14
+###2024.12.15
 - Initial release
 
 </CHANGES>
@@ -35,7 +35,7 @@ rm -f $(ls &plugin;/&name;*.txz 2>/dev/null|grep -v '&version;')
 <INLINE>
 **NUT Actions**
 
-This plugin is intended to seamlessly integrate with the NUT Plugin, automatically shutting down all your Docker and LXC containers, as well as virtual machines (VMs), when your server is operating on battery power to save energy. You can specify exceptions to this behavior. Once power is restored, the plugin will automatically restart all previously running containers and VMs.
+This plugin is intended to seamlessly integrate with the NUT Plugin, automatically shutting down all your Docker and LXC containers, as well as virtual machines (VMs), when your server is operating on battery power to save energy. You can specify exceptions to this behavior. Once power is restored, the plugin will automatically restart all previously running containers and VMs if exceptions where specified on the plugin page.
 </INLINE>
 </FILE>
 
