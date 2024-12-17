@@ -103,6 +103,9 @@ on_battery() {
   else
     rm -f /tmp/nut-actions/vm_running.list
   fi
+  logger "nut-actions: spinning down all disks"
+  # Spin down all disks
+  /usr/local/sbin/emcmd "cmdSpindownAll=Apply"
   rm -f /var/run/nut-actions.pid
 }
 
