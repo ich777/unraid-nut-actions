@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "nut-actions">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2024.12.17">
-  <!ENTITY md5       "e94707d155a26abcd1e47c29b0594f9d">
+  <!ENTITY version   "2025.02.25">
+  <!ENTITY md5       "8962ce4903db6efaa035921629750398">
   <!ENTITY launch    "Settings/nut-actions">
   <!ENTITY gitURL    "https://github.com/&author;/unraid-&name;/raw/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
@@ -14,6 +14,9 @@
 <PLUGIN  name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.14" support="https://forums.unraid.net/topic/92865-support-ich777-amd-vendor-reset-coraltpu-hpsahba">
 
 <CHANGES>
+
+###2025.02.25
+- Add configurable delay in seconds for on-battery task (defaults to 0), configruable in the file: &plugin;/settings.cfg
 
 ###2024.12.17
 - Spin down all disks when on battery
@@ -53,6 +56,10 @@ if [ ! -f /boot/config/plugins/nut-dw.plg ]; then
   echo "---ERROR: NUT Plugin not found! Please install the NUT Plugin from desertwitch aka Rysz---"
   echo "------------------------------------------------------------------------------------------"
   exit 1
+fi
+
+if [ ! -f &plugin;/settings.cfg ]; then
+  echo "DELAY_SECONDS=30" &gt; &plugin;/settings.cfg
 fi
 
 grep -q '/usr/bin/nut-actions on_line' /boot/config/plugins/nut-dw/ups/xnut-notify-hooks.sh || sed -i -e '/^ONLINE /,/}/{/}/s/^/    if [ -f \/usr\/bin\/nut-actions ]; then\n      \/usr\/bin\/nut-actions on_line\n    fi\n/}' /boot/config/plugins/nut-dw/ups/xnut-notify-hooks.sh
