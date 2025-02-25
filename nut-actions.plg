@@ -59,7 +59,7 @@ if [ ! -f /boot/config/plugins/nut-dw.plg ]; then
 fi
 
 if [ ! -f &plugin;/settings.cfg ]; then
-  echo "DELAY_SECONDS=30" &gt; &plugin;/settings.cfg
+  echo "DELAY_SECONDS=0" &gt; &plugin;/settings.cfg
 fi
 
 grep -q '/usr/bin/nut-actions on_line' /boot/config/plugins/nut-dw/ups/xnut-notify-hooks.sh || sed -i -e '/^ONLINE /,/}/{/}/s/^/    if [ -f \/usr\/bin\/nut-actions ]; then\n      \/usr\/bin\/nut-actions on_line\n    fi\n/}' /boot/config/plugins/nut-dw/ups/xnut-notify-hooks.sh
