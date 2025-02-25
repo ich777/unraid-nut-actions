@@ -15,6 +15,17 @@ on_battery() {
   # Create pid file
   echo $$ > /var/run/nut-actions.pid
 
+  # Read settings file
+  DELAY_SECONDS=$(cat /boot/config/plugins/nut-actions/settings.cfg 2>/dev/null | grep "DELAY" | cut -d '=' -f2 | sed 's/"//g')
+
+  # If delay is set wait for set delay
+  if [ ! -z "${DELAY_SECONDS}" ]; then
+    if [ "${DELAY_SECONDS}" != "0" ]; then
+      logger "nut-actions: waiting ${DELAY_SECONDS} seconds before continuing with 'on_battery' task..."
+      sleep ${DELAY_SECONDS}s
+    fi
+  fi
+
   # Docker
   # Get running containers exluding exlude list
   if [ -f /boot/config/plugins/nut-actions/docker_exclude.list ]; then
